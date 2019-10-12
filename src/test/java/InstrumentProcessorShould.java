@@ -4,16 +4,20 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InstrumentProcessorShould {
 
-    public static final String TASK = "task";
+    private static final String TASK = "task";
     @Mock
     private TaskDispatcher taskDispatcher;
-    @Mock
+
     private Instrument instrument;
     private InstrumentProcessor instrumentProcessor;
 
@@ -29,7 +33,9 @@ public class InstrumentProcessorShould {
 
     @Before
     public void setUp() {
+        this.instrument = new TestableInstrument();
         this.instrumentProcessor = new InstrumentProcessor(taskDispatcher, instrument);
+        ((TestableInstrument) instrument).addProcessor(instrumentProcessor);
     }
 
     @Test
@@ -55,5 +61,41 @@ public class InstrumentProcessorShould {
         given(taskDispatcher.getTask()).willReturn(null);
 
         instrumentProcessor.process();
+    }
+
+    @Test
+    public void handle_finished_task_event_fired_by_instrument() {
+        given(taskDispatcher.getTask()).willReturn(TASK);
+
+        instrumentProcessor.process();
+
+        verify(taskDispatcher, times(1)).finishedTask(TASK);
+    }
+
+    private static class TestableInstrument implements Instrument {
+        private List<Processor> processors = new ArrayList<>();
+
+        @Override
+        public void execute(String task) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            this.finished();
+        }
+
+        @Override
+        public void finished() {
+            setStatus();
+        }
+
+        void addProcessor(Processor processor) {
+            this.processors.add(processor);
+        }
+
+        void setStatus() {
+            this.processors.forEach(p -> p.update("finished"));
+        }
     }
 }
