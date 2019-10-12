@@ -9,6 +9,9 @@ public class InstrumentProcessor {
 
     public void process() {
         String task = taskDispatcher.getTask();
+        if (task == null) {
+            throw new ArgumentNullException();
+        }
         instrument.execute(task);
     }
 }

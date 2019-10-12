@@ -50,4 +50,11 @@ public class InstrumentProcessorShould {
         verify(taskDispatcher, times(1)).getTask();
         verify(instrument, times(1)).execute(TASK);
     }
+
+    @Test(expected = ArgumentNullException.class)
+    public void pass_exception_on_to_the_caller() {
+        given(taskDispatcher.getTask()).willReturn(null);
+
+        instrumentProcessor.process();
+    }
 }
